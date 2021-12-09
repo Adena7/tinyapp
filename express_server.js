@@ -30,15 +30,21 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  const templateVars = { urls: urlDatabase, username: req.cookies['user_ID']  };
+  const templateVars = { urls: urlDatabase, username: req.cookies['username']  };
   res.render("urls_new", templateVars);
 });
 
+// edit shortURLS
 app.get("/urls/:shortURL", (req, res) => {
   const long = urlDatabase[req.params.shortURL];
-  const templateVars = { shortURL: req.params.shortURL, longURL: long} ;
+  const templateVars = { shortURL: req.params.shortURL, longURL: long, username: req.cookies['username']} ;
   res.render("urls_show", templateVars);
 });
+
+app.post("/urls/:shortURL/edit", (req,res) => {
+  urlDatabase[req.params.shortURL] = req.body.longURL
+  res.redirect("/urls");
+})
 
 // deletes a url
 app.post('/urls/:shortURL/delete', (req,res) => {
@@ -51,14 +57,16 @@ app.get("/urls/login", (req, res) => {
 });
 
 app.post("/urls/login", (req, res) => {
-  res.cookie('username', req.body.username);
+  const user = req.body.username;
+  res.cookie('username', user);
   res.redirect('/urls');
-});
-  
+})
+
 app.post("/urls/logout", (req, res) => {
-  res.clearCookie("username");
-  res.redirect("/urls");
-});
+  res.clearCookie('username');
+  console.log("logging out");
+  res.redirect('/urls');
+})
 
 app.post("/urls", (req, res) => {
   let code = generateRandomString(6)
@@ -66,11 +74,19 @@ app.post("/urls", (req, res) => {
   urlDatabase[code] = req.body.longURL;
   console.log(urlDatabase);
 });
-  
+
 app.get("/u/:shortURL", (req, res) => {
   longURL = urlDatabase[req.params.shortURL]
-  console.log(longURL);
   res.redirect(longURL);
+});
+
+app.get("/register", (req, res) => {
+  const templateVars = { username: req.cookies['username'] };
+  res.render("urls_register", templateVars);
+});
+  
+app.post("/register", (req, res) => {
+
 });
 
 app.get("/", (req, res) => {
