@@ -29,6 +29,15 @@ const checkUserEmail = function (userEmail, database) {
   }
 };
 
+const checkPassword = function(database, password) {
+  for (const id in database) {
+    if (database[id].password === password) {
+      return true;
+    }
+  }
+  return false;
+};
+
 const users = { 
   "userRandomID": {
     id: "userRandomID", 
@@ -81,7 +90,7 @@ app.get("/urls/login", (req, res) => {
 
 app.post("/urls/login", (req, res) => {
   const user = req.body.username;
-  res.cookie('username', user);
+  res.cookie('user_ID', user);
   res.redirect('/urls');
 })
 
@@ -97,15 +106,15 @@ app.get("/login", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  if (checkUserEmail(req.body.email, users)) {
-    for (let id in users) {
-      if (users[id].email === req.body.email && users[id].password === req.body.password) {
-        res.cookie("user_id", users[id].id);
-        res.redirect("/urls");
-      }
-    }
+  let email = req.body.email;
+  if (checkUserEmail(req.body.email, users) && (checkPassword(users, req.body.password))) {
+    res.cookie('user_ID', checkUserEmail(email, users))
+    // console.log(req.body);
+  } else {
+    res.status(404).send('Error 404: Wrong Username/Password')
   }
-  res.status(404).send('Error 404: Wrong Username/Password')
+  //console.log(users);
+  res.redirect('/urls');
 });
 
 app.post("/urls", (req, res) => {
