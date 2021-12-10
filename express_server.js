@@ -19,6 +19,14 @@ function generateRandomString(length) {
   return result;
 };
 
+const checkUserEmail = function (userEmail, database) {
+  for (const id in database) {
+    if (database[id].email === userEmail) {
+      return database[id].id;
+    }
+  }
+};
+
 const users = { 
   "userRandomID": {
     id: "userRandomID", 
@@ -81,6 +89,17 @@ app.post("/urls/logout", (req, res) => {
   res.redirect('/urls');
 })
 
+app.get("/login", (req, res) => {
+  const templateVars = { urls: urlDatabase, username: req.cookies['user_ID']};
+  res.render("urls_login", templateVars);
+});
+
+app.post("/login", (req, res) => {
+  let email = req.body.email;
+  console.log(users);
+  res.redirect('/urls');
+});
+
 app.post("/urls", (req, res) => {
   let code = generateRandomString(6)
   res.redirect(`http://localhost:8080/urls/${code}`);
@@ -98,13 +117,20 @@ app.get("/register", (req, res) => {
   res.render("urls_register", templateVars);
 });
   
-  app.post("/register", (req, res) => {
-    let usernameID = generateRandomString(6);
-    users[usernameID] = {
-      id: usernameID,
-      email: req.body.email,
-      password: req.body.password
-    };
+app.post("/register", (req, res) => {
+  let usernameID = generateRandomString(6);
+  if (req.body.email === "" || req.body.password === "") {
+    res.send(`Enter your email & password. Statuscode:${res.sendStatus(400)}`);
+  };
+  if (checkUserEmail(users, req.body.email)) {
+    res.status(400).send('Error 400 Bad Request: Account already exists')
+  };
+  
+  users[usernameID] = {
+    id: usernameID,
+    email: req.body.email,
+    password: req.body.password
+  };
   console.log(users);
   res.cookie('user_ID', usernameID)
 
