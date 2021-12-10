@@ -21,7 +21,9 @@ function generateRandomString(length) {
 
 const checkUserEmail = function (userEmail, database) {
   for (const id in database) {
+    console.log(id)
     if (database[id].email === userEmail) {
+      console.log(database[id])
       return database[id].id;
     }
   }
@@ -95,9 +97,15 @@ app.get("/login", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  let email = req.body.email;
-  console.log(users);
-  res.redirect('/urls');
+  if (checkUserEmail(req.body.email, users)) {
+    for (let id in users) {
+      if (users[id].email === req.body.email && users[id].password === req.body.password) {
+        res.cookie("user_id", users[id].id);
+        res.redirect("/urls");
+      }
+    }
+  }
+  res.status(404).send('Error 404: Wrong Username/Password')
 });
 
 app.post("/urls", (req, res) => {
@@ -119,10 +127,11 @@ app.get("/register", (req, res) => {
   
 app.post("/register", (req, res) => {
   let usernameID = generateRandomString(6);
+  //console.log(req.body);
   if (req.body.email === "" || req.body.password === "") {
-    res.send(`Enter your email & password. Statuscode:${res.sendStatus(400)}`);
+    res.status(400).send('Error 400 Bad Request: Enter username and password')
   };
-  if (checkUserEmail(users, req.body.email)) {
+  if (checkUserEmail(req.body.email, users)) {
     res.status(400).send('Error 400 Bad Request: Account already exists')
   };
   
@@ -136,7 +145,7 @@ app.post("/register", (req, res) => {
 
   const templateVars = { urls: urlDatabase, username: req.cookies['user_ID'] , userDatabase: users };
   res.redirect('/urls');
-  });
+});
 
 app.get("/", (req, res) => {
   res.send("Hello!");
