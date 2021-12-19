@@ -5,8 +5,6 @@ const PORT = 8080; // default port 8080
 app.set("view engine", "ejs");
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
-let cookieParser = require('cookie-parser');
-app.use(cookieParser());
 const bcrypt = require('bcryptjs');
 const cookieSession = require('cookie-session');
 app.use(cookieSession({
@@ -78,16 +76,16 @@ app.get("/urls", (req, res) => {
   const id = req.session.user_ID;
   const user = users[id];
   if (!user) {
-    res.redirect('/login');
+    res.status(401).send("You must <a href='/login'>login</a> first.");
   }
-  const templateVars = { urls: urlDatabase, username: users[req.session.user_ID].email };
+  const templateVars = { urls: urlDatabase, username: users[req.session.user_ID] };
   
   res.render("urls_index", templateVars);
 });
 
 // Creating new Short URLs
 app.get("/urls/new", (req, res) => {
-  const templateVars = { username: null};
+  const templateVars = { username: users[req.session.user_ID]};
   if (req.session.user_ID) {
     res.render("urls_new", templateVars);
   } else {
@@ -98,7 +96,7 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
   const long = urlDatabase[req.params.shortURL].longURL;
-  const templateVars = { shortURL: req.params.shortURL, longURL: long, username: users[req.session.user_ID].email};
+  const templateVars = { shortURL: req.params.shortURL, longURL: long, username: users[req.session.user_ID]};
   res.render("urls_show", templateVars);
 });
 
@@ -151,11 +149,9 @@ app.post("/login", (req, res) => {
   let email = req.body.email;
   if (checkUserEmail(req.body.email, users) && (checkPassword(users, req.body.password))) {
     req.session.user_ID = getUserByEmail(email, users);
-    // console.log(req.body);
   } else {
     res.status(404).send('Error 404: Wrong Username/Password');
   }
-  //console.log(users);
   res.redirect('/urls');
 });
 
@@ -163,7 +159,6 @@ app.post("/urls", (req, res) => {
   let code = generateRandomString(6);
   res.redirect(`http://localhost:8080/urls/${code}`);
   urlDatabase[code] = {longURL: req.body.longURL, userID: req.session.user_ID};
-  console.log(urlDatabase);
 });
 
 app.get("/u/:shortURL", (req, res) => {
@@ -180,7 +175,6 @@ app.get("/register", (req, res) => {
   
 app.post("/register", (req, res) => {
   let usernameID = generateRandomString(6);
-  //console.log(req.body);
   if (req.body.email === "" || req.body.password === "") {
     res.status(400).send('Error 400 Bad Request: Enter username and password');
   }
@@ -193,7 +187,6 @@ app.post("/register", (req, res) => {
     email: req.body.email,
     password: bcrypt.hashSync(req.body.password, 10)
   };
-  console.log(users);
   req.session.user_ID = usernameID;
 
   res.redirect('/urls');
@@ -203,9 +196,7 @@ app.get("/", (req, res) => {
   res.redirect("/login");
 });
 
-app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
-});
+
 
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
@@ -213,4 +204,8 @@ app.get("/urls.json", (req, res) => {
 
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
+});
+
+app.listen(PORT, () => {
+  console.log(`Example app listening on port ${PORT}!`);
 });
