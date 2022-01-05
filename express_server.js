@@ -23,9 +23,7 @@ function generateRandomString(length) {
 
 const checkUserEmail = function(userEmail, database) {
   for (const id in database) {
-    console.log(id);
     if (database[id].email === userEmail) {
-      console.log(database[id]);
       return database[id].id;
     }
   }
